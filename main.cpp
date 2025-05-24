@@ -3,10 +3,11 @@
 #include <string>
 #include <vector>
 #include <iomanip>
+
 #include "utilities.h"
 #include "movies.h"
 
-bool parseLine(std::string& line, std::string& movieName, double& movieRating) {
+bool parseLine(std::string &line, std::string &movieName, double &movieRating) {
     auto comma = line.find_last_of(',');
     movieName = line.substr(0, comma);
     movieRating = std::stod(line.substr(comma + 1));
@@ -20,13 +21,11 @@ int main(int argc, char** argv) {
         std::cerr << "Usage: " << argv[0] << " moviesFilename [prefixFilename]\n";
         return 1;
     }
-
     std::ifstream movieFile(argv[1]);
     if (!movieFile) {
         std::cerr << "Could not open file " << argv[1] << "\n";
         return 1;
     }
-
     MovieDatabase db;
     std::string line, name;
     double rating;
@@ -35,6 +34,7 @@ int main(int argc, char** argv) {
     movieFile.close();
 
     db.sortByName();
+
     if (argc == 2) {
         db.printAll();
         return 0;
@@ -45,32 +45,28 @@ int main(int argc, char** argv) {
         std::cerr << "Could not open file " << argv[2] << "\n";
         return 1;
     }
-
     std::vector<std::string> prefixes;
     while (std::getline(prefixFile, line))
         if (!line.empty())
             prefixes.push_back(line);
+    prefixFile.close();
 
-    for (size_t i = 0; i < prefixes.size(); ++i) {
-        auto& p = prefixes[i];
+    for (auto &p : prefixes) {
         auto matches = db.getMoviesWithPrefix(p);
         if (matches.empty()) {
             std::cout << "No movies found with prefix " << p << "\n";
         } else {
-            for (auto& m : matches)
+            for (auto &m : matches) {
                 std::cout << m.name << ", " << std::fixed << std::setprecision(1) << m.rating << "\n";
-        }
-        if (i + 1 < prefixes.size())
+            }
             std::cout << "\n";
+        }
     }
 
-    for (auto& p : prefixes) {
+    for (auto &p : prefixes) {
         auto best = db.getBestMovieWithPrefix(p);
         if (best.rating >= 0.0) {
-            std::cout << "Best movie with prefix " << p
-                      << " is: " << best.name
-                      << " with rating " << std::fixed << std::setprecision(1)
-                      << best.rating << "\n";
+            std::cout << "Best movie with prefix " << p << " is: " << best.name << " with rating " << std::fixed << std::setprecision(1) << best.rating << "\n";
         }
     }
 
