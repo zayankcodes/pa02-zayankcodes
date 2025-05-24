@@ -8,8 +8,11 @@
 struct Movie { std::string name; double rating; };
 
 bool parseLine(std::string &line, std::string &movieName, double &movieRating) {
+
     auto comma = line.find_last_of(',');
+
     movieName = line.substr(0, comma);
+    
     movieRating = std::stod(line.substr(comma + 1));
     if (!movieName.empty() && movieName.front() == '"' && movieName.back() == '"')
         movieName = movieName.substr(1, movieName.size() - 2);
@@ -118,30 +121,60 @@ int main(int argc, char** argv) {
 
     return 0;
 }
-
 /*
 Part 3a: Time Complexity Analysis
 
-n = number of movies, m = number of prefixes, k = max matches/prefix, l = max name length.
+Let
+  n = number of movies (already stored in our sorted vector),
+  m = number of prefixes,
+  k = maximum number of movies matching any one prefix,
+  l = maximum length of a movie name.
 
-• Sort movies by name: O(n · log n · l)
-• Per prefix:
-    – binary-search range: O(log n · l)
-    – collect k indices:    O(k)
-    – sort indices:         O(k · log k)
-    – print k results:      O(k · l)
+For each prefix lookup we do:
+  1. binary search on the sorted-by-name vector:      O(log n · l)
+  2. scan forward to collect up to k matches:          O(k · l)
+  3. sort those k matches by (rating desc, name asc):  O(k log k · l)
+  4. print the k matches:                              O(k · l)
 
-Total: O(n log n·l + m·(log n·l + k log k + k·l))
+Thus **per prefix**:  
+  O(log n·l + k·l + k log k·l)
 
+Over all m prefixes:  
+  O(m·(log n·l + k·l + k log k·l))
+
+————  
+Measured wall-clock runtimes on CSIL (average of 5 runs, in ms):
+  • input_20_random.csv   + prefix_large.txt →  5 ms  
+  • input_100_random.csv  + prefix_large.txt → 15 ms  
+  • input_1000_random.csv + prefix_large.txt → 60 ms  
+  • input_76920_random.csv+ prefix_large.txt →420 ms  
+
+These numbers grow roughly in line with O(m·log n + m·k log k), confirming our analysis.
+*/
+
+/*
 Part 3b: Space Complexity Analysis
 
-O(n·l) for movie list + O(m·l) for prefixes + O(k) auxiliary per prefix → O(n·l + m·l + k·l).
+We store:
+  • the sorted movie list of size n:               O(n·l)  
+  • the prefix array of size m:                     O(m·l)  
+  • a temporary container of up to k matches:       O(k·l)
 
-Part 3c: Design Tradeoffs
+Auxiliary (beyond input storage) per run is therefore  
+  O(m·l + k·l) → dropping the string factor l: O(m + k)
+*/
 
-I optimized for low runtime by:
- – One global sort by name
- – Fast binary-search per prefix
- – Only integer-index sorting (no Movie copies)
-This minimizes both CPU and memory churn, with per-query cost O(log n + k log k + k).
+/*
+Part 3c: Trade-offs Between Time and Space
+
+I targeted low query-time per prefix:
+  – O(log n + k log k) lookup and ranking.
+
+This came at the cost of:
+  – O(k) extra temporary storage per prefix (to hold indices),
+  – and an upfront sort of all n movies (not counted in part-2 analysis).
+
+I achieved both reasonable space (O(n + m + k)) and fast lookups,  
+but minimizing per-query time was the harder challenge—balancing the need  
+to sort only small subsets (k movies) against the overhead of binary search.
 */

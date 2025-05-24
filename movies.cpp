@@ -2,6 +2,7 @@
 #include "movies.h"
 #include <algorithm>
 #include <iostream>
+#include <functional>
 
 MovieDatabase::MovieDatabase() : root(new Node) {}
 MovieDatabase::~MovieDatabase() { deleteNode(root); }
@@ -48,7 +49,9 @@ void MovieDatabase::printAll() const {
 }
 
 std::vector<Movie> MovieDatabase::getMoviesWithPrefix(const std::string &p) const {
+
     Node* cur = root;
+    
     for (char c : p) {
         auto it = cur->ch.find(c);
         if (it == cur->ch.end()) return {};
@@ -61,7 +64,9 @@ std::vector<Movie> MovieDatabase::getMoviesWithPrefix(const std::string &p) cons
 }
 
 Movie MovieDatabase::getBestMovieWithPrefix(const std::string &p) const {
+
     auto v = getMoviesWithPrefix(p);
     if (v.empty()) return Movie{"", -1.0};
-    return v.front();  // already sorted
+    return v.front(); 
+
 }
