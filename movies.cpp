@@ -1,47 +1,67 @@
+// movies.cpp
 #include "movies.h"
 #include <algorithm>
 #include <iostream>
 
-void MovieDatabase::addMovie(const std::string& name, double rating) {
-    movies.push_back({name, rating});
+MovieDatabase::MovieDatabase() : root(new Node) {}
+MovieDatabase::~MovieDatabase() { deleteNode(root); }
+
+void MovieDatabase::deleteNode(Node* n) {
+    for (auto &kv : n->ch) deleteNode(kv.second);
+    delete n;
 }
 
-void MovieDatabase::sortByName() {
-    std::sort(movies.begin(), movies.end(),
-              [](auto& a, auto& b){ return a.name < b.name; });
+void MovieDatabase::addMovie(const std::string &name, double rating) {
+    int idx = movies.size();
+    movies.push_back({name, rating});
+    Node* cur = root;
+    for (char c : name) {
+        auto &child = cur->ch[c];
+        if (!child) child = new Node;
+        child->idx.push_back(idx);
+        cur = child;
+    }
+  
+}
+
+void MovieDatabase::finalize() {
+
+    std::function<void(Node*)> dfs = [&](Node* n) {
+        auto cmp = [&](int a, int b){
+            auto &A = movies[a], &B = movies[b];
+            if (A.rating != B.rating) return A.rating > B.rating;
+            return A.name < B.name;
+        };
+        std::sort(n->idx.begin(), n->idx.end(), cmp);
+        for (auto &kv : n->ch) dfs(kv.second);
+    };
+    dfs(root);
 }
 
 void MovieDatabase::printAll() const {
-    for (auto& m : movies)
+  
+    auto tmp = movies;
+    std::sort(tmp.begin(), tmp.end(),
+              [](auto &A, auto &B){ return A.name < B.name; });
+    for (auto &m : tmp)
         std::cout << m.name << ", " << m.rating << "\n";
 }
 
-std::vector<Movie> MovieDatabase::getMoviesWithPrefix(const std::string& prefix) const {
-    std::vector<Movie> result;
-    auto it = std::lower_bound(
-        movies.begin(), movies.end(), prefix,
-        [&](auto& m, const std::string& p){
-            return m.name.compare(0, p.size(), p) < 0;
-        });
-    for (; it != movies.end(); ++it) {
-        if (it->name.rfind(prefix, 0) == 0)
-            result.push_back(*it);
-        else
-            break;
+std::vector<Movie> MovieDatabase::getMoviesWithPrefix(const std::string &p) const {
+    Node* cur = root;
+    for (char c : p) {
+        auto it = cur->ch.find(c);
+        if (it == cur->ch.end()) return {};
+        cur = it->second;
     }
-    if (!result.empty()) {
-        std::sort(result.begin(), result.end(),
-                  [](auto& a, auto& b){
-                      if (a.rating != b.rating) return a.rating > b.rating;
-                      return a.name < b.name;
-                  });
-    }
-    return result;
+    std::vector<Movie> out;
+    out.reserve(cur->idx.size());
+    for (int i : cur->idx) out.push_back(movies[i]);
+    return out;
 }
 
-Movie MovieDatabase::getBestMovieWithPrefix(const std::string& prefix) const {
-    Movie best{ "", -1.0 };
-    auto cands = getMoviesWithPrefix(prefix);
-    if (!cands.empty()) best = cands.front();
-    return best;
+Movie MovieDatabase::getBestMovieWithPrefix(const std::string &p) const {
+    auto v = getMoviesWithPrefix(p);
+    if (v.empty()) return Movie{"", -1.0};
+    return v.front();  // already sorted
 }
