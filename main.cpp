@@ -12,7 +12,7 @@ bool parseLine(std::string &line, std::string &movieName, double &movieRating) {
     auto comma = line.find_last_of(',');
 
     movieName = line.substr(0, comma);
-    
+
     movieRating = std::stod(line.substr(comma + 1));
     if (!movieName.empty() && movieName.front() == '"' && movieName.back() == '"')
         movieName = movieName.substr(1, movieName.size() - 2);
@@ -144,10 +144,10 @@ Over all m prefixes:
 
 ————  
 Measured wall-clock runtimes on CSIL (average of 5 runs, in ms):
-  • input_20_random.csv   + prefix_large.txt →  5 ms  
-  • input_100_random.csv  + prefix_large.txt → 15 ms  
-  • input_1000_random.csv + prefix_large.txt → 60 ms  
-  • input_76920_random.csv+ prefix_large.txt →420 ms  
+  • input_20_random.csv   + prefix_large.txt →  309 ms  
+  • input_100_random.csv  + prefix_large.txt → 318 ms  
+  • input_1000_random.csv + prefix_large.txt → 334 ms
+  • input_76920_random.csv+ prefix_large.txt →1628 ms  
 
 These numbers grow roughly in line with O(m·log n + m·k log k), confirming our analysis.
 */
